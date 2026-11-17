@@ -6,6 +6,10 @@ from typing import Annotated
 
 # 1. Dependencia basica: validar API key
 async def verify_api_key(x_api_key: str = Header(...)):
+    """
+    El trabajo de esta dependencia es buscar un emcabezado (Header) en la peticion HTTP llamado x-api-key
+    Si el valor proporcionado no coincide con el valor determinado, lanza un error 401 bloqueando la peticion
+    """
     if x_api_key != "my-secret-api-key":
         raise HTTPException(status_code=401, detail="Invalid API Key")
     return x_api_key
