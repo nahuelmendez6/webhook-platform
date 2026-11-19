@@ -56,7 +56,7 @@ async def add_process_time_and_request_id(request: Request, call_next):
     # calcular duración
     process_time = time.time() - start_time
 
-    # Inyectar cabeceras en la respuesta saliente
+    # Inyectar cabeceras en la respuesta saliente (modificacion de response)
     response.headers["X-Process-Time"] = f"{process_time:.4f} sec"
     response.headers["X-Request-ID"] = request_id
 
@@ -65,3 +65,31 @@ async def add_process_time_and_request_id(request: Request, call_next):
 # Incluir los routers de las rutas definidas en health.py y items.py
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
+
+
+# ---------- LOGICA DE EVENTOS Y BACKGROUND TASKS --------
+
+# 4. Funcion que se ejecutara en segundo plano
+async def process_event_task(event_id: str, payload: dict):
+    print(f"⚙️ Iniciando procesamiento en background del evento: {event_id}")
+    
+    # Simulamos el envío de un webhook usando nuestro cliente global del Lifespan
+    # await http_client.post("https://ejemplo.com/webhook", json=payload)
+    
+    print(f"✅ Evento {event_id} procesado y enviado.")
+
+
+# 5. Endpoint para recibir el evento
+@app.post("/api/v1/events",  tags=["Events"])
+async def create_event(payload: dict, backgound_tasks: BackgroundTasks):
+    # Simulamos guardar rapido en db
+    event_id = str(uuid.uuid4())
+
+    # Encolar la tarea pesada/lenta en segundo plano
+    background_tasks.add_task(process_event_task, event_id, payload)
+
+    return {
+        "message": "Evento recibido. Procesamiento en segundo plano iniciado.",
+        "event_id": event_id,
+        "status": "queued"
+    }
