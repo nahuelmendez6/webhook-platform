@@ -42,6 +42,26 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
+# 3. Middleware personalizado: Duración y Request ID
+@app.middleware("http")
+async def add_process_time_and_request_id(request: Request, call_next):
+    # Generar ID único para trazar la petición en los logs
+    request_id = str(uuid.uuid4())
+    start_time = time.time()
+
+    # call_next envia la peticion al router y espera la respuesta
+    response = await call_next(request)
+
+    # calcular duración
+    process_time = time.time() - start_time
+
+    # Inyectar cabeceras en la respuesta saliente
+    response.headers["X-Process-Time"] = f"{process_time:.4f} sec"
+    response.headers["X-Request-ID"] = request_id
+
+    return response
+
 # Incluir los routers de las rutas definidas en health.py y items.py
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
